@@ -7,7 +7,7 @@ import time
 
 import io
 import sys
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='gb18030')
+# sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='gb18030')
 
 def GetAllClassifyBook():
 	result = requests.get("http://estudy.intretech.com:9090/estudy/book/GetAllClassifyBook")
@@ -39,6 +39,8 @@ def getBookDetail(bookId):
 	return result.text
 	pass
 
+global oknum
+oknum = 0
 
 def checkurl(url):
 	global unUseUrl
@@ -50,18 +52,20 @@ def checkurl(url):
 		unUseUrl=unUseUrl+1
 		return False
 	else:
-		print("url ok．unUseUrl：%d  "%unUseUrl)
+		global oknum
+		print("url ok．unUseUrl：%d  "%oknum)
+		oknum+=1
 		return True
 	pass
 
 def saveInfoToCsv(List):
     try:
-        f=open('./unUseBook'+time.strftime('%Y-%m-%d',time.localtime(time.time()))+'.csv','a+',newline = '')
+        f=open('./unUseBook'+time.strftime('%Y-%m-%d',time.localtime(time.time()))+'.csv','a+')#,newline = '')
         csvwriter = csv.writer(f)
         headers = ['bookName','bookId','bookCover','author','publisher','authorDetail','content','purchaseUrl','recommendation']
         csvwriter.writerow(headers)
         for row in List:
-            print(row)
+            # print(row)
             csvwriter.writerow(row)
         f.close()
     except Exception as e:
@@ -105,7 +109,7 @@ def main():
 					content = bookInfo.get("content")
 					purchaseUrl = bookInfo.get("purchaseUrl")
 					recommendation = bookInfo.get("recommendation")
-					print("%s  url:%s"%(bookName,purchaseUrl))
+					# print("%s  url:%s"%(bookName,purchaseUrl))
 					if checkurl(purchaseUrl) is False:
 						print(":::::对不起，您要访问的页面暂时没有找到")
 						unUseBookList.append([bookName,bookId,bookCover,author,publisher,authorDetail,content,purchaseUrl,recommendation])
@@ -121,7 +125,7 @@ def main():
 	#
 	#
 	pass
-	print("000000000000000000000000000000000000000000000000000000000000")
+	# print("000000000000000000000000000000000000000000000000000000000000")
 	print(unUseBookList)
 	saveInfoToCsv(unUseBookList)
 pass
