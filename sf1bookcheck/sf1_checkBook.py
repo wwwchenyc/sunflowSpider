@@ -5,9 +5,21 @@ import re
 import csv
 import time
 
+from selenium import webdriver
 import io
 import sys
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer,encoding='gb18030')
+
+ # user_agent_list = ["Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",
+ #                    "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+ #                    "Mozilla/5.0 (Windows NT 10.0; …) Gecko/20100101 Firefox/61.0",
+ #                    "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36",
+ #                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36",
+ #                    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.101 Safari/537.36",
+ #                    "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)",
+ #                    "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.15) Gecko/20110303 Firefox/3.6.15",
+ #                    ]
+ #                headers['User-Agent'] = random.choice(user_agent_list)
 
 def GetAllClassifyBook():
 	result = requests.get("http://estudy.intretech.com:9090/estudy/book/GetAllClassifyBook")
@@ -43,10 +55,16 @@ global oknum
 oknum = 0
 
 def checkurl(url):
-	global unUseUrl
-	kv={'user-agent':'Mozilla/5.0'}
-	result = requests.get(url,headers=kv)
-	response = re.findall(r'对不起，您要访问的页面暂时没有找到',result.text)
+	global unUseUrl,driver
+	try:
+		driver.get(url)
+	except Exception as e:
+		print("超时")
+	# kv={'user-agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'}
+	# result = requests.get(url,headers=kv)
+	result =  driver.page_source
+	# print(result)
+	response = re.findall(r'对不起，您要访问的页面暂时没有找到',result)
 	if len(response) > 0:
 		print("%d:::::对不起，您要访问的页面暂时没有找到"%unUseUrl)
 		unUseUrl=unUseUrl+1
@@ -68,6 +86,7 @@ def saveInfoToCsv(List):
             # print(row)
             csvwriter.writerow(row)
         f.close()
+        List.clear()
     except Exception as e:
         print(e)
         print("save csv file fail!!!!!!!!!!")
@@ -76,7 +95,9 @@ def saveInfoToCsv(List):
 unUseUrl=0
 unUseBookList=[]
 def main():
-	global unUseBookList
+	global unUseBookList,driver
+	driver= webdriver.Chrome()
+	driver.set_page_load_timeout(4)
 	#获取分类数量
 	data = json.loads(GetAllClassifyBook())
 	classData = data.get("data")
@@ -112,10 +133,12 @@ def main():
 					# print("%s  url:%s"%(bookName,purchaseUrl))
 					if checkurl(purchaseUrl) is False:
 						print(":::::对不起，您要访问的页面暂时没有找到")
-						unUseBookList.append([bookName,bookId,bookCover,author,publisher,authorDetail,content,purchaseUrl,recommendation])
+						unUseBookList.append([bookName,bookId,purchaseUrl])
 						print(unUseBookList)
+						saveInfoToCsv(unUseBookList)
 						pass
 					pass
+					# time.sleep(1)
 				# print(bookCount)
 			else:
 				print("booklist is nome")
@@ -128,6 +151,7 @@ def main():
 	# print("000000000000000000000000000000000000000000000000000000000000")
 	print(unUseBookList)
 	saveInfoToCsv(unUseBookList)
+	driver.close()
 pass
 
 
@@ -135,7 +159,7 @@ pass
 if __name__ == '__main__':
 	main()
 	
-
+# checkurl("http://product.dangdang.com/23483032.html")
 # params = json.loads(result.text)
 
 # data = params.get('data')
